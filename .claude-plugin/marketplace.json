@@ -1,0 +1,13 @@
+{
+  "name": "foreman",
+  "description": "Foreman: run Claude Code as a software team that reports to you.",
+  "owner": { "name": "Suraj Gour", "url": "https://github.com/surajgour-d11" },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "plugins": [
+    {
+      "name": "foreman",
+      "source": "./",
+      "description": "Run Claude Code as a software team that reports to you."
+    }
+  ]
+}

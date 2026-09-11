@@ -1,0 +1,25 @@
+{
+  "name": "foreman",
+  "displayName": "Foreman",
+  "version": "0.1.0",
+  "description": "Run Claude Code as a software team: architect, implementer, reviewer, and qa roles under a lead that reports to you.",
+  "author": { "name": "Suraj Gour", "url": "https://github.com/surajgour-d11" },
+  "repository": "https://github.com/surajgour-d11/foreman",
+  "license": "MIT",
+  "keywords": ["team", "agents", "review", "workflow"],
+  "dependencies": [{ "name": "superpowers", "marketplace": "claude-plugins-official" }],
+  "userConfig": {
+    "keep_awake": {
+      "type": "boolean",
+      "title": "Keep the Mac awake",
+      "description": "Run caffeinate for the life of each session so unattended work is not cut short by idle sleep.",
+      "default": true
+    },
+    "auto_pr": {
+      "type": "boolean",
+      "title": "Push and open the draft PR at Gate 2 without asking",
+      "description": "When off, the lead presents the branch at Gate 2 and asks you before pushing or opening the pull request.",
+      "default": true
+    }
+  }
+}
