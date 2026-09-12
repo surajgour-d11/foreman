@@ -376,7 +376,7 @@ waits for that word; it never resumes on its own.
    phase.
 
 The SessionStart hook (section 11) tells the manager how many
-unfinished ledgers the repo has and nothing else about them -- that
+unfinished ledgers the repo has and nothing else about them — that
 message is not fenced and a human reads it, so it carries no repo-written
 text. The ledger paths and phases go to the lead in fenced
 `additionalContext`, along with the instruction not to resume unasked;
@@ -435,7 +435,8 @@ four lines (9); what each gate presents (4).
 | `~/.claude/CLAUDE.md` | lead standing orders (section 10) |
 | `~/.claude/hooks/notify.sh` | reads the Notification event JSON from stdin, shows an osascript banner titled "Claude Code" with the message |
 | `~/.claude/hooks/session-start.sh` | starts `caffeinate -i -w <claude pid>` if not already running for that PID; in a git repo with unfinished ledgers, emits JSON with a `systemMessage` for the manager giving the count of unfinished ledgers only, and `additionalContext` carrying the fenced ledger paths and phases and telling the lead to ask before resuming |
-| `~/.claude/settings.json` | add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="1"`, a `Notification` hook (no matcher) running notify.sh, a `SessionStart` hook running session-start.sh, `autoContinueAtUsageLimit: true` (native wait-and-continue after a usage limit), `inputNeededNotifEnabled: true` (native phone push when a question or permission prompt waits). `teammateMode` stays unset. Existing keys kept. |
+| `~/.claude/hooks/pre-compact.sh` | on every compaction, manual or automatic, prints custom instructions for the summary: keep the open run's fenced ledger path and phase line, the plan, spec, branch and worktree paths, pending escalations, the tier and the last spend line; drop the intake conversation and quoted plan, spec or review text. Silent when no run is open |
+| `~/.claude/settings.json` | add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="1"`, a `Notification` hook (no matcher) running notify.sh, a `SessionStart` hook running session-start.sh, a `PreCompact` hook (no matcher) running pre-compact.sh, `autoContinueAtUsageLimit: true` (native wait-and-continue after a usage limit), `inputNeededNotifEnabled: true` (native phone push when a question or permission prompt waits). `teammateMode` stays unset. Existing keys kept. |
 
 `~/.claude` is not a git repository and holds session data, so nothing
 is committed. Plans go to `~/.claude/docs/superpowers/plans/`.
