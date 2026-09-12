@@ -27,6 +27,7 @@ without losing work.
 | R7 | Integration | Layer on the installed superpowers and ponytail plugins without forking their skills. |
 | R8 | Resilience | Survive network disconnect, laptop sleep, usage limits, and laptop shutdown with no lost work and a deterministic resume. |
 | R9 | Quality | Thin documents, lean comments, clean commit history, update in place instead of appending. |
+| R10 | Budget | Every plan carries a USD estimate per phase; the lead reports actual spend against it in the ledger and at Gate 2. Report only. |
 
 ## 3. Architecture
 
@@ -66,12 +67,15 @@ intake → spec → plan → [architect pair] → GATE 1 → execution → qa
 2. **Plan.** Lead runs superpowers:writing-plans, marking any group of
    tasks with disjoint files and no ordering dependency as a parallel-safe
    batch, then creates the plan's workspace and ledger (section 8.1).
+   The plan ends with a Budget table; see
+   `docs/superpowers/specs/2026-09-11-token-budget-design.md`.
 3. **Plan review.** Architect pair (section 6) returns one joint verdict.
    Lead fixes blocking issues and agreed recommendations, records rulings
    on the rest.
 4. **Gate 1.** Lead notifies the manager and presents a short summary,
-   the architects' verdict and manager questions, and the plan's file
-   path. Never the plan inline. Waits.
+   the budget total and per-phase estimates, the architects' verdict
+   and manager questions, and the plan's file path. Never the plan
+   inline. Waits.
 5. **Execution.** SDD, with every implementer dispatch using the
    `implementer` role and every per-task review a single `reviewer`.
    Pairs are reserved for steps 3 and 7. A task failing review twice
@@ -92,10 +96,11 @@ intake → spec → plan → [architect pair] → GATE 1 → execution → qa
    are fixed by an implementer and re-reviewed by one reviewer.
 8. **Gate 2.** Lead pushes the branch, opens a **draft** pull request,
    and notifies the manager with the PR link, both review verdicts, the
-   qa report, and the minor findings. The manager requests changes or
-   marks it ready and merges. The push and draft PR are pre-approved by
-   this design. A repo with no remote is an escalation, never a local
-   merge. superpowers:finishing-a-development-branch does the mechanics.
+   qa report, the minor findings, and the last `Spend:` line with the
+   `spend.md` path. The manager requests changes or marks it ready and
+   merges. The push and draft PR are pre-approved by this design. A repo
+   with no remote is an escalation, never a local merge.
+   superpowers:finishing-a-development-branch does the mechanics.
 
 ## 5. Roles
 
@@ -323,7 +328,8 @@ This design adds, inside the same workspace:
   (superpowers' `scripts/sdd-workspace PLAN_FILE`, first line
   `# SDD ledger — plan: <plan path>`) so SDD adopts it at execution and
   everything below has one home from plan review to done.
-- Phase markers the lead writes on every transition:
+- Phase markers the lead writes on every transition, each followed by
+  a UTC time:
   `Phase: plan-review | gate-1 | execution | qa | final-review | gate-2 | done`,
   `Gate 1: approved <timestamp>`, `Gate 2: <decision> <timestamp>`,
   `Lenses: <a>, <b>`, `Batch: tasks <n,m> — <branch>, <branch>`,

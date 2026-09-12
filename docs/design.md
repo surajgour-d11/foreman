@@ -20,6 +20,7 @@ Ship the agent team as a Claude Code plugin named `foreman`, hosted in the priva
 | Prerequisites | `superpowers` declared in `dependencies` in cross-marketplace form, since a bare name resolves only inside the foreman marketplace. macOS tools, `gh` auth, Agent Teams env, and the two resilience settings are checked by `/foreman:setup`, which offers to apply the settings a plugin cannot set itself. `ponytail` is optional: the implementer's prompt carries its smallest-change rule, and the doctor reports a missing ponytail as WARN with the install commands, so passing setup never requires trusting a new marketplace. |
 | Trust boundary | A repo's ledger text is untrusted input. The hook fences it as data, shows at most five ledgers with phases cut to 120 characters, and strips control characters before it reaches the lead or the screen. |
 | Version | `version` in `plugin.json` only, starting at `0.1.0`. Bumped on every release; users update with `claude plugin update foreman@foreman`. |
+| Budget | Every plan carries a USD estimate per phase from `budget.md`; `scripts/usage.py` reports actual spend from the session transcripts into the ledger and `spend.md`. Report only, list price, no option. Design: `docs/superpowers/specs/2026-09-11-token-budget-design.md`. |
 | License | MIT, so that going public needs no relicensing. Change before publishing if you prefer otherwise. |
 
 ## 3. Layout
@@ -34,18 +35,22 @@ foreman/
 ├── hooks/hooks.json         SessionStart (startup|clear|compact) and Notification
 ├── scripts/
 │   ├── session-start.sh     orders + ledger message + caffeinate, one JSON output
+│   ├── usage.py             spend report from the session transcripts
 │   ├── notify.sh            macOS banner
 │   └── selftest.sh          runnable check for both hooks
 ├── orders.md                the standing orders, verbatim
+├── budget.md                per-dispatch cost baseline and the estimating recipe
 ├── skills/setup/
 │   ├── SKILL.md             /foreman:setup
 │   └── scripts/
 │       ├── doctor.py        prerequisite report
 │       └── apply-setup.py   settings merge and migration
 ├── tests/test_setup.sh      runnable check for doctor and apply against a fake HOME
+├── tests/test_usage.sh      runnable check for usage.py against fixture transcripts
 ├── docs/design.md           this file
 ├── docs/team-design.md      the parent agent-team design, copied so the repo is self-contained
-├── docs/superpowers/plans/  the implementation plan for this design
+├── docs/superpowers/plans/  the implementation plans
+├── docs/superpowers/specs/  design documents for features after 0.1.0
 ├── README.md                install, update, configure, project auto-enable
 ├── CHANGELOG.md
 └── LICENSE

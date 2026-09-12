@@ -38,6 +38,9 @@ backup folder. Restart Claude Code afterwards.
 - Your Mac does not idle-sleep while a session is open.
 - If a repo has unfinished team work, the session tells you on open, then
   does whatever you ask. It resumes only when you type `resume`.
+- Every plan ends with a budget in dollars, estimated per phase from measured
+  runs. The ledger carries the running spend, and Gate 2 shows actual against
+  estimate. The budget never stops the work.
 
 ## Configure
 
@@ -75,6 +78,7 @@ in `~/.claude/backups/foreman-migration-*`.
 ## Development
 
 `scripts/selftest.sh` checks the hooks. `tests/test_setup.sh` checks the
-setup scripts against a fake home. `claude plugin validate .` checks the
+setup scripts against a fake home. `tests/test_usage.sh` checks the spend
+script against fixture transcripts. `claude plugin validate .` checks the
 manifests. Release by bumping `version` in `.claude-plugin/plugin.json` and
 adding a CHANGELOG entry.
