@@ -5,13 +5,16 @@
 # the same way session-start.sh does it, with printable ASCII as an allowlist.
 
 repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-# Workspace directories are date-prefixed and the glob is lexical, so the last
-# open ledger is the newest run. Describing the stale one would misdirect.
+# The newest open run is the one written to most recently. Workspace names come from
+# plan filenames, so they order the runs only while that convention holds; mtime does
+# not depend on it, and git never restores mtimes, so a repo cannot forge one. Ties
+# (a fresh clone stamps every file alike) fall back to the last name in the glob.
 newest=
 for ledger in "$repo"/.superpowers/sdd/*/progress.md; do
   [ -f "$ledger" ] || continue
-  phase=$(grep '^Phase:' "$ledger" 2>/dev/null | tail -1)
+  phase=$(grep -a '^Phase:' "$ledger" 2>/dev/null | tail -1)
   case "$phase" in "Phase: done"*) continue ;; esac
+  [ -z "$newest" ] || [ ! "$newest" -nt "$ledger" ] || continue
   newest=$ledger; newest_phase=$phase
 done
 [ -n "$newest" ] || exit 0

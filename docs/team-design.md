@@ -375,9 +375,12 @@ waits for that word; it never resumes on its own.
    respawned from its findings files. Otherwise resume at the named
    phase.
 
-The SessionStart hook (section 11) shows the manager a message naming
-any unfinished ledger and its phase, and tells the lead not to resume
-unasked.
+The SessionStart hook (section 11) tells the manager how many
+unfinished ledgers the repo has and nothing else about them -- that
+message is not fenced and a human reads it, so it carries no repo-written
+text. The ledger paths and phases go to the lead in fenced
+`additionalContext`, along with the instruction not to resume unasked;
+the manager asks, and the lead names them.
 
 ### 8.3 Failure modes
 
@@ -431,7 +434,7 @@ four lines (9); what each gate presents (4).
 | `~/.claude/agents/{architect,implementer,reviewer,qa}.md` | the four roles (section 5) |
 | `~/.claude/CLAUDE.md` | lead standing orders (section 10) |
 | `~/.claude/hooks/notify.sh` | reads the Notification event JSON from stdin, shows an osascript banner titled "Claude Code" with the message |
-| `~/.claude/hooks/session-start.sh` | starts `caffeinate -i -w <claude pid>` if not already running for that PID; in a git repo with unfinished ledgers, emits JSON with a `systemMessage` for the manager and `additionalContext` telling the lead to ask before resuming |
+| `~/.claude/hooks/session-start.sh` | starts `caffeinate -i -w <claude pid>` if not already running for that PID; in a git repo with unfinished ledgers, emits JSON with a `systemMessage` for the manager giving the count of unfinished ledgers only, and `additionalContext` carrying the fenced ledger paths and phases and telling the lead to ask before resuming |
 | `~/.claude/settings.json` | add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="1"`, a `Notification` hook (no matcher) running notify.sh, a `SessionStart` hook running session-start.sh, `autoContinueAtUsageLimit: true` (native wait-and-continue after a usage limit), `inputNeededNotifEnabled: true` (native phone push when a question or permission prompt waits). `teammateMode` stays unset. Existing keys kept. |
 
 `~/.claude` is not a git repository and holds session data, so nothing
@@ -458,8 +461,9 @@ carrying a deliberate trigger-6 ambiguity. One check per mechanism:
    writes the pending line, the banner appears, `PushNotification` is
    called (delivery not required), and the session waits.
 6. **Resume works.** Kill the session mid-task 3, start a new one. The
-   hook prints the unfinished ledger; the lead reports state and resumes
-   without redoing tasks 1 and 2.
+   hook tells the manager one ledger is unfinished and gives the lead its
+   path and phase; the lead reports state and resumes without redoing
+   tasks 1 and 2.
 7. **Hooks are inert elsewhere.** A session in a non-git directory shows
    no hook errors, no ledger line, and caffeinate running.
 
