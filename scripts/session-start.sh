@@ -26,7 +26,7 @@ if repo=$(git rev-parse --show-toplevel 2>/dev/null); then
   for ledger in "$repo"/.superpowers/sdd/*/progress.md; do
     [ -f "$ledger" ] || continue
     phase=$(grep '^Phase:' "$ledger" 2>/dev/null | tail -1); phase=${phase:0:120}
-    [ "$phase" = "Phase: done" ] && continue
+    case "$phase" in "Phase: done"*) continue ;; esac
     ledgers="${ledgers}${ledger} (${phase:-no Phase line yet})"$'\n'
   done
 fi
@@ -39,6 +39,8 @@ except OSError:
     orders = "orders.md is missing from the foreman plugin; reinstall it.\n"
 if os.environ.get("CLAUDE_PLUGIN_OPTION_AUTO_PR") == "false":
     orders += "Option auto_pr is off: at Gate 2 present the branch and ask the manager before pushing or opening the pull request.\n"
+root = os.path.dirname(os.environ["FOREMAN_ORDERS"])
+orders += "\nBudget baseline: %s/budget.md. Spend script: /usr/bin/python3 %s/scripts/usage.py LEDGER.\n" % (root, root)
 items = [re.sub(r"[\x00-\x1f\x7f-\x9f<>]", "", l) for l in os.environ["FOREMAN_LEDGERS"].splitlines() if l]
 context = "<foreman>\nYou have foreman. These are your standing orders as the lead:\n\n" + orders + "</foreman>"
 out = {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": context}}
