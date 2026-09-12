@@ -16,9 +16,9 @@ Ship the agent team as a Claude Code plugin named `foreman`, hosted in the priva
 | Hosting | One repo, both marketplace and plugin. `.claude-plugin/marketplace.json` lists `./` as the single plugin. |
 | Platform | macOS only in this version. The macOS-specific parts (banner, caffeinate) exit silently elsewhere; the standing orders and ledger notice are platform-neutral and always emitted. |
 | Standing orders | Fixed text, injected into every session by the SessionStart hook as `additionalContext`, the same mechanism superpowers uses. Plugins cannot ship a CLAUDE.md. |
-| Configuration | Two `userConfig` booleans, both default true and read by the hook: `keep_awake` runs caffeinate; `auto_pr` off makes the hook append one sentence to the orders telling the lead to ask before pushing or opening the pull request at Gate 2. No per-role overrides: plugin agents are namespaced `foreman:<role>`, so a copied agent file becomes a different agent and is never dispatched. Per-role overrides are deferred. |
+| Configuration | Two `userConfig` booleans, both default true and read by the SessionStart hook: `keep_awake` runs caffeinate; `auto_pr` off makes the hook append one sentence to the orders telling the lead to ask before pushing or opening the pull request at Gate 2. No per-role overrides: plugin agents are namespaced `foreman:<role>`, so a copied agent file becomes a different agent and is never dispatched. Per-role overrides are deferred. |
 | Prerequisites | `superpowers` declared in `dependencies` in cross-marketplace form, since a bare name resolves only inside the foreman marketplace. macOS tools, `gh` auth, Agent Teams env, and the two resilience settings are checked by `/foreman:setup`, which offers to apply the settings a plugin cannot set itself. `ponytail` is optional: the implementer's prompt carries its smallest-change rule, and the doctor reports a missing ponytail as WARN with the install commands, so passing setup never requires trusting a new marketplace. |
-| Trust boundary | A repo's ledger text is untrusted input. The hook fences it as data, shows at most five ledgers with phases cut to 120 characters, and strips control characters before it reaches the lead or the screen. |
+| Trust boundary | A repo's ledger text is untrusted input. Both hooks that read it fence it as data, strip control and markup characters — `pre-compact.sh` allows only printable ASCII — and cap what they print before it reaches the lead or the screen: `session-start.sh` shows at most five ledgers with phases cut to 120 characters, `pre-compact.sh` one ledger. |
 | Version | `version` in `plugin.json` only, starting at `0.1.0`. Bumped on every release; users update with `claude plugin update foreman@foreman`. |
 | Budget | Every plan carries a USD estimate per phase from `budget.md`; `scripts/usage.py` reports actual spend from the session transcripts into the ledger and `spend.md`. Report only, list price, no option. Design: `docs/superpowers/specs/2026-09-11-token-budget-design.md`. |
 | License | MIT, so that going public needs no relicensing. Change before publishing if you prefer otherwise. |
@@ -32,12 +32,13 @@ foreman/
 │   ├── plugin.json          name, version, dependencies, userConfig
 │   └── marketplace.json     single entry, source "./"
 ├── agents/                  architect.md, implementer.md, reviewer.md, qa.md
-├── hooks/hooks.json         SessionStart (startup|clear|compact) and Notification
+├── hooks/hooks.json         SessionStart (startup|clear|compact), Notification, PreCompact
 ├── scripts/
 │   ├── session-start.sh     orders + ledger message + caffeinate, one JSON output
 │   ├── usage.py             spend report from the session transcripts
 │   ├── notify.sh            macOS banner
-│   └── selftest.sh          runnable check for both hooks
+│   ├── pre-compact.sh       compaction instructions that keep the run's state
+│   └── selftest.sh          runnable check for the three hooks
 ├── orders.md                the standing orders, verbatim
 ├── budget.md                per-dispatch cost baseline and the estimating recipe
 ├── skills/setup/
@@ -62,7 +63,8 @@ foreman/
 - **Standing orders** (`orders.md`). Same text as the current `~/.claude/CLAUDE.md` with six edits: roles and pairs are named `foreman:<role>` wherever they are dispatch targets, "live in `~/.claude/agents`" becomes "ship with the foreman plugin", and the hook line "the SessionStart hook prints it" stays true.
 - **session-start.sh.** Gains a third job: read `orders.md` from `${CLAUDE_PLUGIN_ROOT}` and include it in `additionalContext` ahead of any ledger notice. Honours `CLAUDE_PLUGIN_OPTION_KEEP_AWAKE`. Runs on `startup|clear|compact` so orders survive compaction, matching superpowers.
 - **notify.sh.** Unchanged, except it exits quietly when `osascript` is absent.
-- **hooks.json.** Both hooks reference scripts via `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`.
+- **pre-compact.sh.** New. Runs on every compaction, manual or automatic, and prints instructions for the summary: keep the open run's ledger path and phase, the plan and spec paths, the branch and worktrees, pending escalations, the tier, and the last `Spend:` line; drop the intake conversation and quoted plan, spec, or review text. Silent when no team run is open.
+- **hooks.json.** All three hooks reference scripts via `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`.
 
 ## 5. `/foreman:setup`
 

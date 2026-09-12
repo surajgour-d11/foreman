@@ -1,7 +1,7 @@
 {
   "name": "foreman",
   "displayName": "Foreman",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Run Claude Code as a software team: architect, implementer, reviewer, and qa roles under a lead that reports to you.",
   "author": { "name": "Suraj Gour", "url": "https://github.com/surajgour-d11" },
   "repository": "https://github.com/surajgour-d11/foreman",

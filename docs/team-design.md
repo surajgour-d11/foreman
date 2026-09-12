@@ -21,9 +21,9 @@ without losing work.
 | R1 | Manager gates | Two: approve the plan (Gate 1), review the finished branch (Gate 2). Everything between runs unattended. |
 | R2 | Escalation | Behaviour-changing decisions stop the team and notify the manager, the way a developer asks a manager. |
 | R3 | Roster | architect, implementer, reviewer, qa. The lead is the session itself. Up to three implementers run in parallel when the plan splits cleanly. |
-| R4 | Peer review | Plan review and final code review by pairs that confer and return one joint report. |
+| R4 | Peer review | Plan review and final code review by one reviewer for a small feature, and by pairs that confer and return one joint report for a standard one. |
 | R5 | Notification | macOS banner plus Claude Code push. |
-| R6 | Models | architect and implementer inherit the session model. reviewer on Opus. qa on Sonnet. |
+| R6 | Models | architect, implementer, and reviewer on Opus. qa on Sonnet. The lead is the session model. |
 | R7 | Integration | Layer on the installed superpowers and ponytail plugins without forking their skills. |
 | R8 | Resilience | Survive network disconnect, laptop sleep, usage limits, and laptop shutdown with no lost work and a deterministic resume. |
 | R9 | Quality | Thin documents, lean comments, clean commit history, update in place instead of appending. |
@@ -41,14 +41,15 @@ Three layers:
    verification-before-completion, finishing-a-development-branch) and
    ponytail. Unchanged.
 3. **Team.** This design: four agent files, a user-level `CLAUDE.md` with
-   the lead's standing orders, two hooks, one env var.
+   the lead's standing orders, three hooks, one env var.
 
 The team layer changes the process layer only through the lead's
 standing orders, which win over plugin skill text where they conflict.
 
 **Execution modes.** Teammates are used only where peers must talk: the
-architect pair and the final reviewer pair. Everything else is an
-ordinary subagent. Teammates run in-process (Ghostty, no tmux).
+architect pair and the final reviewer pair of a standard feature.
+Everything else is an ordinary subagent. Teammates run in-process
+(Ghostty, no tmux).
 
 **When the team model applies.** Feature work: anything that goes
 through brainstorming or has a plan. Questions, one-file fixes, and
@@ -58,8 +59,8 @@ escalation list and notification hooks apply always.
 ## 4. Lifecycle and gates
 
 ```
-intake → spec → plan → [architect pair] → GATE 1 → execution → qa
-→ [reviewer pair] → GATE 2 (draft PR)
+intake → spec → plan → plan review → GATE 1 → execution
+→ verification (qa with the final review) → GATE 2 (draft PR)
 ```
 
 1. **Intake.** Lead runs superpowers:brainstorming with the manager and
@@ -68,17 +69,28 @@ intake → spec → plan → [architect pair] → GATE 1 → execution → qa
    tasks with disjoint files and no ordering dependency as a parallel-safe
    batch, then creates the plan's workspace and ledger (section 8.1).
    The plan ends with a Budget table; see
-   `docs/superpowers/specs/2026-09-11-token-budget-design.md`.
-3. **Plan review.** Architect pair (section 6) returns one joint verdict.
-   Lead fixes blocking issues and agreed recommendations, records rulings
-   on the rest.
+   `docs/superpowers/specs/2026-09-11-token-budget-design.md`. The lead
+   decides the tier: small when the plan has at most three tasks and no
+   task changes a public interface, schema, or config format, migrates
+   data, adds a dependency, or touches auth, secrets, permissions, or
+   crypto; otherwise standard. Count deliverables, not headings: if a
+   task would still make sense split in two, count it as two. The ledger
+   records it.
+3. **Plan review.** One architect for a small plan, the architect pair
+   (section 6) for a standard one, returns one verdict. Lead fixes
+   blocking issues and agreed recommendations, records rulings on the
+   rest.
 4. **Gate 1.** Lead notifies the manager and presents a short summary,
-   the budget total and per-phase estimates, the architects' verdict
-   and manager questions, and the plan's file path. Never the plan
-   inline. Waits.
+   the tier and why, the budget total and per-phase estimates, the
+   architects' verdict and manager questions, and the plan's file path.
+   Never the plan inline. Asks the manager to run `/compact` before
+   approving, so the intake conversation does not ride along for the
+   rest of the run. Waits.
 5. **Execution.** SDD, with every implementer dispatch using the
    `implementer` role and every per-task review a single `reviewer`.
-   Pairs are reserved for steps 3 and 7. A task failing review twice
+   Pairs are reserved for steps 3 and 6 of a standard feature. Dispatch
+   prompts name the brief file, never the task text. A re-review resumes
+   the task's reviewer with the fix range. A task failing review twice
    escalates (trigger 7).
    **Parallel batches.** When the plan marks a group of tasks
    parallel-safe (disjoint files, no ordering dependency; the architects
@@ -88,18 +100,19 @@ intake → spec → plan → [architect pair] → GATE 1 → execution → qa
    plan branch in task order. A merge conflict means the batch was not
    clean: one implementer rebases the conflicting branch onto the merged
    result, recorded as a ruling; failing twice escalates.
-6. **QA.** `qa` runs on the branch. Bugs become implementer fix tasks in
-   the ledger, then back to qa. Two failed cycles on one bug escalate.
-7. **Final review.** Lead squashes `wip:` commits to one commit per task
-   and folds `test(qa):` commits into the task they belong to. Reviewer
-   pair reviews the whole branch diff. Critical and Important findings
-   are fixed by an implementer and re-reviewed by one reviewer.
-8. **Gate 2.** Lead pushes the branch, opens a **draft** pull request,
-   and notifies the manager with the PR link, both review verdicts, the
-   qa report, the minor findings, and the last `Spend:` line with the
-   `spend.md` path. The manager requests changes or marks it ready and
-   merges. The push and draft PR are pre-approved by this design. A repo
-   with no remote is an escalation, never a local merge.
+6. **Verification.** Lead squashes `wip:` commits to one commit per task,
+   then dispatches `qa` and the final review together on the branch: one
+   `reviewer` (lens solo) for a small feature, the reviewer pair for a
+   standard one. Critical and Important findings and qa's bugs go to one
+   implementer fix wave, then one scoped re-review by the same reviewer
+   (the primary, for a pair). qa does not run again; its `test(qa):`
+   commits fold into their tasks.
+7. **Gate 2.** Lead pushes the branch, opens a **draft** pull request,
+   and notifies the manager with the PR link, the review verdict or
+   verdicts, the qa report, the minor findings, and the last `Spend:`
+   line with the `spend.md` path. The manager requests changes or marks
+   it ready and merges. The push and draft PR are pre-approved by this
+   design. A repo with no remote is an escalation, never a local merge.
    superpowers:finishing-a-development-branch does the mechanics.
 
 ## 5. Roles
@@ -111,14 +124,16 @@ Four files in `~/.claude/agents/`. Rules common to every role:
 - Never guess on a behaviour-changing point: return an escalation block
   (section 7) and stop. Never talk to the manager directly.
 - Report in the role's fixed format, short and concrete, citing
-  `file:line`. Write any finding you would hate to lose to disk first.
+  `file:line`, in at most 25 lines; anything longer goes in a file under
+  the workspace that the return names. Write any finding you would hate
+  to lose to disk first.
 
 ### 5.1 architect
 
 | Field | Value |
 |---|---|
-| description | Reviews an implementation plan against its spec and the real codebase before the manager sees it. Use in pairs as teammates after writing-plans and before Gate 1. Read-only. |
-| model | `inherit` |
+| description | Reviews an implementation plan against its spec and the real codebase before the manager sees it. Use alone for a small plan or in pairs as teammates for a standard one, after writing-plans and before Gate 1. Does not edit code. |
+| model | `opus` |
 | disallowedTools | `Edit, Write, NotebookEdit` |
 | color | `purple` |
 
@@ -146,7 +161,7 @@ Manager questions: - question — options — recommendation
 | Field | Value |
 |---|---|
 | description | Implements one plan task at a time with TDD in the plan's worktree, commits, self-reviews, and reports. Use for every implementer dispatch in subagent-driven-development and for qa fix tasks. |
-| model | `inherit` |
+| model | `opus` |
 | skills | `superpowers:test-driven-development`, `superpowers:verification-before-completion` |
 | color | `green` |
 
@@ -174,7 +189,7 @@ Self-review notes: ...
 
 | Field | Value |
 |---|---|
-| description | Reviews a diff for correctness, spec compliance, and over-engineering. Use as a single subagent for every per-task review and, in pairs as teammates, for the final branch review. Read-only. |
+| description | Reviews a diff for correctness, spec compliance, and over-engineering. Use as a single subagent for every per-task review and for a small feature's final review, and in pairs as teammates for a standard feature's final review. Does not edit code. |
 | model | `opus` |
 | disallowedTools | `Edit, Write, NotebookEdit` |
 | color | `orange` |
@@ -211,7 +226,7 @@ Plan findings: - step — issue                 (the plan is wrong, not the code
 
 | Field | Value |
 |---|---|
-| description | Verifies a feature works end to end by running the suite and the app, exercising it as a user, and probing edge cases. Writes failing regression tests for bugs, never fixes production code. Use after all plan tasks complete and before the final review. |
+| description | Verifies a feature works end to end by running the suite and the app, exercising it as a user, and probing edge cases. Writes failing regression tests for bugs, never fixes production code. Use after all plan tasks complete, alongside the final review. |
 | model | `sonnet` |
 | color | `cyan` |
 
@@ -220,7 +235,7 @@ scripts, Makefile) and runs the app where one exists; exercises the
 spec's acceptance criteria as a user would; tries invalid inputs, empty
 states, boundaries, concurrency where relevant; for each bug, commits a
 failing regression test with a `test(qa):` message so the lead can fold
-it into its task's commit at step 7.
+it into its task's commit at step 6.
 
 **Does not:** edit production code, skip a check because it looks fine,
 or report PASS without the commands and output.
@@ -236,13 +251,13 @@ Bugs: - <title> — repro steps — regression test <path> — commit <sha>
 
 ## 6. Peer review protocol
 
-For the architect pair (step 3) and the final reviewer pair (step 7).
-Both members come from the same agent file, spawned as teammates named
-`<role>-1` (primary) and `<role>-2` (secondary). The spawn prompt gives
-each: the artifact (spec and plan paths, or base and head commits), the
-peer's name, its lens, its role in the pair, and the workspace path for
-findings. The lead picks two different lenses per feature and records
-them in the ledger.
+Standard tier only: the architect pair (step 3) and the final reviewer
+pair (step 6). Both members come from the same agent file, spawned as
+teammates named `<role>-1` (primary) and `<role>-2` (secondary). The
+spawn prompt gives each: the artifact (spec and plan paths, or base and
+head commits), the peer's name, its lens, its role in the pair, and the
+workspace path for findings. The lead picks two different lenses per
+feature and records them in the ledger.
 
 1. **Independent.** Review alone. Write the findings list to
    `<workspace>/reviews/<phase>-<name>.md` before sending any message.
@@ -330,11 +345,12 @@ This design adds, inside the same workspace:
   everything below has one home from plan review to done.
 - Phase markers the lead writes on every transition, each followed by
   a UTC time:
-  `Phase: plan-review | gate-1 | execution | qa | final-review | gate-2 | done`,
+  `Phase: plan-review | gate-1 | execution | final-review | gate-2 | done`,
   `Gate 1: approved <timestamp>`, `Gate 2: <decision> <timestamp>`,
-  `Lenses: <a>, <b>`, `Batch: tasks <n,m> — <branch>, <branch>`,
+  `Tier: small | standard — <why>`, `Lenses: <a>, <b>`,
+  `Batch: tasks <n,m> — <branch>, <branch>`,
   `Escalation: ... — pending | — answered: ...`.
-- `reviews/<phase>-<name>.md` per pair member and
+- `reviews/<phase>-<name>.md` per reviewing role and
   `reviews/<phase>-joint.md`.
 
 The workspace is git-ignored scratch, so `git clean -fdx` destroys it;
@@ -370,7 +386,7 @@ unasked.
 | Network disconnect | Claude Code retries; a long outage idles the session and the banner fires. Manager says "continue". | Manual continue |
 | Laptop sleep | `caffeinate -i` tied to the session PID prevents idle sleep. Forced sleep on wake behaves like a disconnect. | Lid-close on battery needs root to prevent |
 | Usage or rate limit | Claude Code waits for the reset and continues by itself (`autoContinueAtUsageLimit`); banner fires meanwhile. | Wall-clock wait |
-| Context limit | Auto-compaction; ledger is the source of truth. Lead stays small by delegating. | None expected |
+| Context limit | Manager-run `/compact` at Gate 1, auto-compaction after. The PreCompact hook tells either summary to keep the ledger path, phase, branch and open escalations and to drop the intake conversation. The ledger is the source of truth. The lead stays small by delegating. | None expected |
 | Shutdown or crash | `claude --resume`, then the resume protocol. Pairs respawn from findings files; implementer resumes from last commit plus dirty worktree. | Manual resume |
 | Manager unavailable | Push reached the phone, banner on the desktop. Session waits. | Idle only |
 

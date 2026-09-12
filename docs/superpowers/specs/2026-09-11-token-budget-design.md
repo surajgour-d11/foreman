@@ -1,7 +1,7 @@
 # Token Budget Design
 
 **Date:** 2026-09-11
-**Status:** Approved by the manager; corrected after plan review (pricing rule, figures, cross-check)
+**Status:** Approved by the manager; corrected after plan review (pricing rule, figures, cross-check). Phase list and spend cadence superseded by `2026-09-12-lean-lifecycle-design.md`: qa folds into final-review, and the spend script runs at phase lines only.
 **Parent designs:** `docs/team-design.md` (the team), `docs/design.md` (the plugin). This document adds one behaviour to the team: every plan carries a spend estimate, and the lead reports actual spend against it. Nothing else in the lifecycle changes.
 
 ## 1. Purpose
@@ -99,8 +99,8 @@ Edits to `orders.md`, in place:
 
 1. Lifecycle step 2 gains: the plan ends with a `## Budget` table built from `budget.md`, one row per phase and a total.
 2. Step 4 (Gate 1) gains: the budget total and per-phase estimates.
-3. Step 8 (Gate 2) gains: the last `Spend:` line and the `spend.md` path.
-4. Resilience gains one paragraph: the `Session:` line, the timestamp on `Phase:` lines, running `usage.py <ledger>` after every `Phase:` line and every `Task N: complete` (the gates are `Phase:` lines, so they are covered), and dispatch descriptions for implementers and reviewers starting with `Task N:`.
+3. Step 7 (Gate 2) gains: the last `Spend:` line and the `spend.md` path.
+4. Resilience gains one paragraph: the `Session:` line, the timestamp on `Phase:` lines, running `usage.py <ledger>` after every `Phase:` line (the gates are `Phase:` lines, so they are covered), and dispatch descriptions for implementers and reviewers starting with `Task N:`.
 5. One sentence: the budget is information; never stop, wait, or cut scope because of it.
 
 `orders.md` stays under 80 lines.

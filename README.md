@@ -32,8 +32,11 @@ backup folder. Restart Claude Code afterwards.
 ## What changes in a session
 
 - The lead follows the standing orders in [orders.md](orders.md): plan, plan
-  review by two architects, your approval, execution with per-task review,
-  qa, final review by two reviewers, and a draft pull request for you.
+  review by one or two architects depending on size, your approval, execution
+  with per-task review, qa alongside the final review, and a draft pull
+  request for you.
+- When the conversation is compacted, by you or automatically, the summary is
+  told to keep the run's state and drop the chatter, so a long run survives it.
 - A macOS banner appears whenever Claude Code is waiting on you.
 - Your Mac does not idle-sleep while a session is open.
 - If a repo has unfinished team work, the session tells you on open, then
