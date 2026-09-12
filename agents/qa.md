@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Verifies a feature works end to end by running the suite and the app, exercising it as a user, and probing edge cases. Writes failing regression tests for bugs, never fixes production code. Use after all plan tasks complete and before the final review.
+description: Verifies a feature works end to end by running the suite and the app, exercising it as a user, and probing edge cases. Writes failing regression tests for bugs, never fixes production code. Use after all plan tasks complete, alongside the final review.
 model: sonnet
 color: cyan
 ---
@@ -30,3 +30,4 @@ Acceptance criteria: - <criterion> — PASS | FAIL — <evidence>
 Bugs: - <title> — repro steps — regression test <path> — commit <sha>
 Open questions: - <what the spec does not say>
 ```
+Return at most 25 lines; anything longer goes in a file under the workspace that the return names.

@@ -105,7 +105,7 @@ spend="$ws/spend.md"
 grep -qF '| intake | $24.00 | $0.30 | $0.30 |' "$spend" || fail "intake row: $(grep intake "$spend")"
 grep -qF '| plan-review | $38.00 | $0.21 | $0.21 |' "$spend" || fail "plan-review row (gate-1 must fold in): $(grep plan-review "$spend")"
 grep -qF '| execution | $50.00 | $50.26 | $50.07 |  | $0.01 | $0.18 |  |' "$spend" || fail "execution row: $(grep '^| execution' "$spend")"
-grep -qF '| qa | $9.00 | $0.00 |' "$spend" || fail "qa row present with zero actual"
+! grep -q '^| qa ' "$spend" || fail "qa row printed; qa folds into final-review"
 grep -qF '| total | $159.00 | $50.77 |' "$spend" || fail "total row: $(grep '^| total' "$spend")"
 grep -qF '| 2 | $0.01 | $0.18 | $0.00 | $0.19 |' "$spend" || fail "task 2 row: $(grep '^| 2 ' "$spend")"
 grep -qF 'Not found: cccc3333' "$spend" || fail "missing session not listed"
@@ -135,7 +135,7 @@ grep -qF '| intake |  | $0.51 |' "$ws2/spend.md" || fail "run 3 intake row witho
 ws3="$repo/.superpowers/sdd/plan3"; mkdir -p "$ws3"
 printf '# SDD ledger — plan: docs/superpowers/plans/plan.md\nPhase: qa 2026-09-11T11:00:00Z\n' > "$ws3/progress.md"
 out=$(CLAUDE_CODE_SESSION_ID=bbbb2222 $py "$usage" "$ws3/progress.md")
-[ "$out" = 'Spend: qa $0.01 of $9.00 — total $0.01 of $159.00' ] || fail "run 4 stdout: '$out'"
+[ "$out" = 'Spend: final-review $0.01 of $38.00 — total $0.01 of $159.00' ] || fail "run 4 stdout (Phase: qa must fold into final-review): '$out'"
 
 # Bad input: exit 2 with a message, nothing written.
 set +e
@@ -191,7 +191,7 @@ out=$($py "$usage" "$ws6/progress.md")
 ws7="$repo/.superpowers/sdd/plan7"; mkdir -p "$ws7"
 printf '# SDD ledger — plan: docs/superpowers/plans/plan.md\nSession: eeee5555\nPhase: execution 2026-09-11T11:00Z\nPhase: qa 2026-09-11T11:30:00Z\n' > "$ws7/progress.md"
 out=$($py "$usage" "$ws7/progress.md")
-[ "$out" = 'Spend: qa $0.10 of $9.00 — total $0.15 of $159.00' ] || fail "turn in the phase's first second: out='$out'"
+[ "$out" = 'Spend: final-review $0.10 of $38.00 — total $0.15 of $159.00' ] || fail "turn in the phase's first second: out='$out'"
 grep -qF '| execution | $50.00 | $0.05 |' "$ws7/spend.md" || fail "minute-precision phase line: $(grep '^| execution' "$ws7/spend.md")"
 
 # A phase with no Budget row prints its actual alone; the total still shows its estimate.
@@ -199,7 +199,7 @@ ws8="$repo/.superpowers/sdd/plan8"; mkdir -p "$ws8"
 printf '# Plan\n\n## Budget\n\n| Phase | Counts | Estimate |\n|---|---|---|\n| intake | x | $10 |\n| total | | $30 |\n' > "$repo/docs/superpowers/plans/plan8.md"
 printf '# SDD ledger — plan: docs/superpowers/plans/plan8.md\nSession: bbbb2222\nPhase: qa 2026-09-11T11:00:00Z\n' > "$ws8/progress.md"
 out=$($py "$usage" "$ws8/progress.md")
-[ "$out" = 'Spend: qa $0.01 — total $0.01 of $30.00' ] || fail "phase without a Budget row: out='$out'"
+[ "$out" = 'Spend: final-review $0.01 — total $0.01 of $30.00' ] || fail "phase without a Budget row: out='$out'"
 
 rm -rf "$tmp"
 echo "usage.py test: OK"

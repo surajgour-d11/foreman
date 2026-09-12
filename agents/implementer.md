@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Implements one plan task at a time with TDD in the plan's worktree, commits, self-reviews, and reports. Use for every implementer dispatch in subagent-driven-development and for qa fix tasks.
-model: inherit
+model: opus
 skills:
   - superpowers:test-driven-development
   - superpowers:verification-before-completion
@@ -48,3 +48,4 @@ Tests: <command> → <pass/fail counts>
 Touched outside task scope: none | <file — why>
 Self-review notes: <what you would flag if you were reviewing this>
 ```
+Write the full report to the file the lead names and return the block above, at most 25 lines.
