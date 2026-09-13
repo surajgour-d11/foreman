@@ -1,0 +1,16 @@
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # macOS: the hooks use caffeinate and pgrep, and /usr/bin/python3 is the interpreter
+    # the plugin hardcodes.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/selftest.sh
+      - run: tests/test_usage.sh
+      - run: tests/test_setup.sh
