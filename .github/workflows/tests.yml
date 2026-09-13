@@ -10,7 +10,7 @@ jobs:
     # the plugin hardcodes.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: scripts/selftest.sh
       - run: tests/test_usage.sh
       - run: tests/test_setup.sh
