@@ -89,8 +89,8 @@ names. The lead reads the summary, not a transcript.
 
 macOS. Claude Code 2.1.267 or newer. The `superpowers` plugin. `ponytail` is
 optional: the implementer carries its smallest-change rule, and the plugin adds
-the full skill. `gh` logged in, for installing from the private marketplace and
-for the draft pull request at the end of each feature.
+the full skill. `gh` logged in, for the draft pull request at the end of each
+feature.
 
 ## Install
 

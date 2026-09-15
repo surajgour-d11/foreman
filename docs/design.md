@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-Ship the agent team as a Claude Code plugin named `foreman`, hosted in the private GitHub repo `surajgour-d11/foreman`, which is also its own marketplace. Team members install with two commands. Going public later means changing repo visibility, nothing in the layout.
+Ship the agent team as a Claude Code plugin named `foreman`, hosted in the public GitHub repo `surajgour-d11/foreman`, which is also its own marketplace. Anyone installs with two commands.
 
 ## 2. Decisions
 
