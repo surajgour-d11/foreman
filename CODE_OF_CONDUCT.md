@@ -61,7 +61,7 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement by contacting the
 maintainer through their GitHub profile at
-[github.com/surajgour-d11](https://github.com/surajgour-d11).
+[github.com/surajgour1496](https://github.com/surajgour1496).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

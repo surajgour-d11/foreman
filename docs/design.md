@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-Ship the agent team as a Claude Code plugin named `foreman`, hosted in the public GitHub repo `surajgour-d11/foreman`, which is also its own marketplace. Anyone installs with two commands.
+Ship the agent team as a Claude Code plugin named `foreman`, hosted in the public GitHub repo `surajgour1496/foreman`, which is also its own marketplace. Anyone installs with two commands.
 
 ## 2. Decisions
 
@@ -77,7 +77,7 @@ Idempotent. Run once after install, again any time to re-check.
 ## 6. Install and update
 
 ```
-claude plugin marketplace add surajgour-d11/foreman
+claude plugin marketplace add surajgour1496/foreman
 claude plugin install foreman@foreman
 /foreman:setup
 ```
@@ -86,7 +86,7 @@ Private repo access uses the team member's existing `gh auth login` or SSH key. 
 
 ```json
 {
-  "extraKnownMarketplaces": { "foreman": { "source": { "source": "github", "repo": "surajgour-d11/foreman" } } },
+  "extraKnownMarketplaces": { "foreman": { "source": { "source": "github", "repo": "surajgour1496/foreman" } } },
   "enabledPlugins": { "foreman@foreman": true }
 }
 ```
