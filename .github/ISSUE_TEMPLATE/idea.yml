@@ -1,0 +1,32 @@
+name: Idea
+description: Propose a change to how the team works
+labels: ["idea"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What got in your way, concretely. A run where the lifecycle cost you
+        time or made a wrong call is worth more than a feature description.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would change
+      description: >
+        Which part — the orders, a role, a gate, a hook, the budget — and what
+        it would do instead.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried or considered
+      description: >
+        Including doing nothing. Foreman is deliberately small; a change that
+        adds a setting to turn off existing behaviour is a harder sell than
+        one that makes the default behaviour right.
+    validations:
+      required: false

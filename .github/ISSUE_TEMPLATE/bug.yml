@@ -1,0 +1,51 @@
+name: Bug report
+description: Something in the lifecycle, the hooks, or the scripts did not do what it says
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: >
+        The smallest sequence that shows it. If a phase or gate is involved,
+        say which one. If the lead was mid-run, the `Phase:` lines from the
+        ledger help more than a transcript.
+    validations:
+      required: true
+  - type: input
+    id: foreman-version
+    attributes:
+      label: Foreman version
+      description: From `claude plugin list`, or the `version` in `.claude-plugin/plugin.json`.
+    validations:
+      required: true
+  - type: input
+    id: claude-version
+    attributes:
+      label: Claude Code version
+      description: From `claude --version`.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: macOS version
+      placeholder: "15.5"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: >
+        Relevant output, the failing test, your `keep_awake` / `auto_pr`
+        settings. Redact paths and transcript excerpts before pasting.
+    validations:
+      required: false

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Contribution guidelines for the repo going public: `CONTRIBUTING.md`,
+`CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` with a scope
+that separates plugin bugs from Claude Code's own, issue forms for bugs and
+ideas, and a pull request template. No change to the plugin itself.
+
 ## 0.3.1
 
 The banner hook ignores idle prompts. Claude Code raises a Notification
