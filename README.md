@@ -81,7 +81,8 @@ names. The lead reads the summary, not a transcript.
   back up when you type `resume` — reading the ledger and git, not its memory
   of the conversation.
 - **Desktop notifications.** A macOS banner when Claude Code needs a
-  permission decision or the lead needs you. Idle nags are suppressed.
+  permission decision or the lead needs you, titled with the repo it came from.
+  Idle nags are suppressed.
 - **No idle sleep.** Your Mac stays awake for the life of the session, so
   unattended work is not cut in half by the lid closing.
 

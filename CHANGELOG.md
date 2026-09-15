@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+The banner names the repo it came from: the title is now `Claude Code — <dir>`,
+taken from the hook payload's `cwd`. One session per repo is the normal way to
+run foreman, and a bare "Claude Code" banner gave no clue which window wanted
+you.
+
 Contribution guidelines for the repo going public: `CONTRIBUTING.md`,
 `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` with a scope
 that separates plugin bugs from Claude Code's own, issue forms for bugs and

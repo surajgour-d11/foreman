@@ -3,14 +3,18 @@
 s="$(cd "$(dirname "$0")" && pwd)"
 py=/usr/bin/python3
 
-out=$(echo '{"hook_event_name":"Notification","message":"Decision needed: new dependency","notification_type":"permission_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
+out=$(echo '{"hook_event_name":"Notification","message":"Decision needed: new dependency","notification_type":"permission_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
 [ "$out" = "Decision needed: new dependency" ] || { echo "FAIL notify message: '$out'"; exit 1; }
-out=$(echo '{"hook_event_name":"Notification","message":"Claude is waiting for your input","notification_type":"idle_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
+out=$(echo '{"hook_event_name":"Notification","message":"Claude is waiting for your input","notification_type":"idle_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
 [ -z "$out" ] || { echo "FAIL notify idle_prompt not dropped: '$out'"; exit 1; }
-out=$(echo 'not json' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
+out=$(echo 'not json' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
 [ "$out" = "Claude Code needs you" ] || { echo "FAIL notify fallback: '$out'"; exit 1; }
-out=$(echo '{"message":"-e display dialog \"pwn\""}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
+out=$(echo '{"message":"-e display dialog \"pwn\""}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
 [ "$out" = '-e display dialog "pwn"' ] || { echo "FAIL notify dash-leading message: '$out'"; exit 1; }
+out=$(echo '{"message":"hi","cwd":"/Users/x/Public/foreman"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | head -1)
+[ "$out" = "Claude Code — foreman" ] || { echo "FAIL notify title: '$out'"; exit 1; }
+out=$(echo '{"message":"hi"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | head -1)
+[ "$out" = "Claude Code" ] || { echo "FAIL notify title fallback: '$out'"; exit 1; }
 
 $py - "$s/../hooks/hooks.json" <<'PY' || { echo "FAIL hooks.json shape"; exit 1; }
 import json, sys
