@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.2
 
 The banner names the repo it came from: the title is now `Claude Code — <dir>`,
 taken from the hook payload's `cwd`. One session per repo is the normal way to
