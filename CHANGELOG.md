@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.3.3
+
+The repository lives in the `neels-ai-msp` organisation. The install command,
+the settings snippet, the manifests, and the security advisory link all name
+`neels-ai-msp/foreman`. GitHub redirects the old `surajgour1496/foreman` URLs,
+but the 0.3.2 notes record that `gh` treats a redirect as a second repository,
+so nothing relies on it. Existing installs must re-register the marketplace:
+`claude plugin marketplace remove foreman`, then add `neels-ai-msp/foreman` and
+install `foreman@foreman` again. Removing the marketplace resets `keep_awake`
+and `auto_pr` to their defaults.
 
 Clicking the banner goes back to the session that raised it. On iTerm2 and
 Ghostty the notification is posted by the terminal itself, which attributes it
@@ -8,8 +17,9 @@ to the tab or split that wrote it; the osascript banner belongs to Script
 Editor, so clicking it opened Script Editor and left you to find the window
 yourself. The terminal has to be allowed to post notifications, and the sound
 is whatever it is set to. Other terminals, and tmux or screen inside either,
-get the osascript banner as before. Control characters are removed from the message and the repo name on
-every path; accented and non-Latin text is kept.
+get the osascript banner as before. Control characters are removed from the
+message and the repo name on every path; accented and non-Latin text is kept.
+A new `notifications` option, default on, silences the banner and nothing else.
 
 ## 0.3.2
 

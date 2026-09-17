@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report privately through GitHub:
-[open a security advisory](https://github.com/surajgour1496/foreman/security/advisories/new).
+[open a security advisory](https://github.com/neels-ai-msp/foreman/security/advisories/new).
 Please do not open a public issue for a vulnerability.
 
 Expect an acknowledgement within a week. If the report is valid, you will get

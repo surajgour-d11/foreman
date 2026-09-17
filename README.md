@@ -98,7 +98,7 @@ feature.
 ## Install
 
 ```
-claude plugin marketplace add surajgour1496/foreman
+claude plugin marketplace add neels-ai-msp/foreman
 claude plugin install foreman@foreman
 ```
 
@@ -134,7 +134,7 @@ To enable foreman for everyone who opens a repo, add to its `.claude/settings.js
 
 ```json
 {
-  "extraKnownMarketplaces": { "foreman": { "source": { "source": "github", "repo": "surajgour1496/foreman" } } },
+  "extraKnownMarketplaces": { "foreman": { "source": { "source": "github", "repo": "neels-ai-msp/foreman" } } },
   "enabledPlugins": { "foreman@foreman": true }
 }
 ```

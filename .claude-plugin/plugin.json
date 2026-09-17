@@ -1,10 +1,10 @@
 {
   "name": "foreman",
   "displayName": "Foreman",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Run Claude Code as a software team: architect, implementer, reviewer, and qa roles under a lead that reports to you.",
   "author": { "name": "Suraj Gour", "url": "https://github.com/surajgour1496" },
-  "repository": "https://github.com/surajgour1496/foreman",
+  "repository": "https://github.com/neels-ai-msp/foreman",
   "license": "MIT",
   "keywords": ["team", "agents", "review", "workflow"],
   "dependencies": [{ "name": "superpowers", "marketplace": "claude-plugins-official" }],
