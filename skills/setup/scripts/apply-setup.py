@@ -49,6 +49,15 @@ def is_leftover(hook):
     return "/.claude/hooks/" in cmd and os.path.basename(cmd) in HOOK_FILES
 
 
+def option(name, default):
+    """A foreman userConfig value from pluginConfigs; Bash-run scripts never see CLAUDE_PLUGIN_OPTION_*."""
+    configs = s.get("pluginConfigs") if isinstance(s.get("pluginConfigs"), dict) else {}
+    for k, v in configs.items():
+        if k.startswith("foreman@") and isinstance(v, dict) and isinstance(v.get("options"), dict):
+            return v["options"].get(name, default)
+    return default
+
+
 def head(path, n=5):
     """First n lines of a text file, stripped; [] when unreadable."""
     try:
@@ -78,10 +87,18 @@ if do_env:
         s["env"] = env
         say("set env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1")
 if do_res:
-    for key in ("autoContinueAtUsageLimit", "inputNeededNotifEnabled"):
-        if s.get(key) is not True:
-            s[key] = True
-            say("set %s=true" % key)
+    if s.get("autoContinueAtUsageLimit") is not True:
+        s["autoContinueAtUsageLimit"] = True
+        say("set autoContinueAtUsageLimit=true")
+    want = option("notifications", True) is not False
+    for key in ("inputNeededNotifEnabled", "agentPushNotifEnabled"):
+        if s.get(key) is not want:
+            s[key] = want
+            say("set %s=%s" % (key, json.dumps(want)))
+    channel = s.get("preferredNotifChannel") or "auto"
+    if (channel == "notifications_disabled") == want:
+        s["preferredNotifChannel"] = "auto" if want else "notifications_disabled"
+        say("set preferredNotifChannel=%s" % s["preferredNotifChannel"])
 if do_mig:
     hooks = s.get("hooks") if isinstance(s.get("hooks"), dict) else {}
     for ev in ("Notification", "SessionStart"):

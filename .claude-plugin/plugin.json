@@ -1,7 +1,7 @@
 {
   "name": "foreman",
   "displayName": "Foreman",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Run Claude Code as a software team: architect, implementer, reviewer, and qa roles under a lead that reports to you.",
   "author": { "name": "Suraj Gour", "url": "https://github.com/surajgour1496" },
   "repository": "https://github.com/neels-ai-msp/foreman",
@@ -24,7 +24,7 @@
     "notifications": {
       "type": "boolean",
       "title": "Desktop notifications",
-      "description": "Show a banner when Claude Code needs a permission decision or the lead needs you. Off silences the banner and nothing else.",
+      "description": "On, /foreman:setup turns on Claude Code's phone pushes (inputNeededNotifEnabled, agentPushNotifEnabled) and re-enables a disabled desktop channel. Off, it turns the pushes off and sets preferredNotifChannel to notifications_disabled.",
       "default": true
     }
   }

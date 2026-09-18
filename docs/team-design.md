@@ -22,7 +22,7 @@ without losing work.
 | R2 | Escalation | Behaviour-changing decisions stop the team and notify the manager, the way a developer asks a manager. |
 | R3 | Roster | architect, implementer, reviewer, qa. The lead is the session itself. Up to three implementers run in parallel when the plan splits cleanly. |
 | R4 | Peer review | Plan review and final code review by one reviewer for a small feature, and by pairs that confer and return one joint report for a standard one. |
-| R5 | Notification | macOS banner plus Claude Code push. |
+| R5 | Notification | Claude Code's own desktop notification and push; no hook of foreman's. |
 | R6 | Models | architect, implementer, and reviewer on Opus. qa on Sonnet. The lead is the session model. |
 | R7 | Integration | Layer on the installed superpowers and ponytail plugins without forking their skills. |
 | R8 | Resilience | Survive network disconnect, laptop sleep, usage limits, and laptop shutdown with no lost work and a deterministic resume. |
@@ -320,8 +320,8 @@ plan already answers it, rule, record `Ruling:` in the ledger, resume.
 Otherwise append `Escalation: <question> — pending` to the ledger, call
 `PushNotification` with one line leading with the decision needed, ask
 the manager with `AskUserQuestion` (question, options, recommendation,
-cost if wrong), wait, then append `— answered: <choice>` and resume. The
-Notification hook (section 11) shows a desktop banner on every idle or
+cost if wrong), wait, then append `— answered: <choice>` and resume. Claude
+Code's own desktop notification (section 11) fires on every idle or
 permission prompt regardless.
 
 ## 8. Resilience
@@ -433,10 +433,9 @@ four lines (9); what each gate presents (4).
 |---|---|
 | `~/.claude/agents/{architect,implementer,reviewer,qa}.md` | the four roles (section 5) |
 | `~/.claude/CLAUDE.md` | lead standing orders (section 10) |
-| `~/.claude/hooks/notify.sh` | reads the Notification event JSON from stdin, shows an osascript banner titled "Claude Code" with the message |
 | `~/.claude/hooks/session-start.sh` | starts `caffeinate -i -w <claude pid>` if not already running for that PID; in a git repo with unfinished ledgers, emits JSON with a `systemMessage` for the manager giving the count of unfinished ledgers only, and `additionalContext` carrying the fenced ledger paths and phases and telling the lead to ask before resuming |
 | `~/.claude/hooks/pre-compact.sh` | on every compaction, manual or automatic, prints custom instructions for the summary: keep the open run's fenced ledger path and phase line, the plan, spec, branch and worktree paths, pending escalations, the tier and the last spend line; drop the intake conversation and quoted plan, spec or review text. Silent when no run is open |
-| `~/.claude/settings.json` | add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="1"`, a `Notification` hook (no matcher) running notify.sh, a `SessionStart` hook running session-start.sh, a `PreCompact` hook (no matcher) running pre-compact.sh, `autoContinueAtUsageLimit: true` (native wait-and-continue after a usage limit), `inputNeededNotifEnabled: true` (native phone push when a question or permission prompt waits). `teammateMode` stays unset. Existing keys kept. |
+| `~/.claude/settings.json` | add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="1"`, a `SessionStart` hook running session-start.sh, a `PreCompact` hook (no matcher) running pre-compact.sh, `autoContinueAtUsageLimit: true` (native wait-and-continue after a usage limit), `inputNeededNotifEnabled: true` (native phone push when a question or permission prompt waits), `preferredNotifChannel` left at `auto` (native desktop notification on iTerm2, Ghostty and Kitty, bell on Apple Terminal). `teammateMode` stays unset. Existing keys kept. |
 
 `~/.claude` is not a git repository and holds session data, so nothing
 is committed. Plans go to `~/.claude/docs/superpowers/plans/`.
@@ -493,6 +492,7 @@ Verified during section 12 checks:
 - Teammates spawned from an agent file inherit `tools`,
   `disallowedTools`, `model`, and body, but not `skills`; lenses are in
   the body for this reason.
-- The Notification hook fires on idle and permission prompts with the
-  message as JSON on stdin.
+- Claude Code posts its own desktop notification on idle and permission
+  prompts; a Notification hook fires alongside it, not instead, so foreman
+  ships none.
 - `caffeinate -i -w <pid>` exits with the session.

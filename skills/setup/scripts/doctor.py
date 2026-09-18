@@ -69,12 +69,21 @@ env = as_dict(s.get("env"))
 enabled = as_dict(s.get("enabledPlugins"))
 hooks = as_dict(s.get("hooks"))
 
+
+def option(name, default):
+    """A foreman userConfig value from pluginConfigs; Bash-run scripts never see CLAUDE_PLUGIN_OPTION_*."""
+    for k, v in as_dict(s.get("pluginConfigs")).items():
+        if k.startswith("foreman@"):
+            return as_dict(as_dict(v).get("options")).get(name, default)
+    return default
+
+
 if platform.system() == "Darwin":
     line("OK", "macos", platform.mac_ver()[0])
 else:
     line("FAIL", "macos", "foreman supports macOS only in this version")
 
-for tool in ("/usr/bin/osascript", "/usr/bin/caffeinate"):
+for tool in ("/usr/bin/caffeinate",):
     line("OK" if os.path.exists(tool) else "FAIL", os.path.basename(tool), tool)
 
 claude = shutil.which("claude")
@@ -114,10 +123,25 @@ if env.get("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS") == "1":
 else:
     line("FAIL", "agent-teams", "not set; fix: apply-setup.py --env")
 
-if s.get("autoContinueAtUsageLimit") is True and s.get("inputNeededNotifEnabled") is True:
-    line("OK", "resilience", "autoContinueAtUsageLimit and inputNeededNotifEnabled are on")
+if s.get("autoContinueAtUsageLimit") is True:
+    line("OK", "resilience", "autoContinueAtUsageLimit is on")
 else:
-    line("WARN", "resilience", "autoContinueAtUsageLimit or inputNeededNotifEnabled off; fix: apply-setup.py --resilience")
+    line("WARN", "resilience", "autoContinueAtUsageLimit off; fix: apply-setup.py --resilience")
+
+# Claude Code posts its own desktop notification (iTerm2, Ghostty, Kitty; bell on Apple Terminal) for
+# permission prompts, idle waits and PushNotification, and pushes to the phone when
+# inputNeededNotifEnabled and agentPushNotifEnabled are on. The notifications option says what foreman
+# wants of them: on, pushes on and the channel not disabled; off, pushes off and the channel disabled.
+want = option("notifications", True) is not False
+wrong = ["%s=%s" % (k, json.dumps(s.get(k))) for k in ("inputNeededNotifEnabled", "agentPushNotifEnabled") if s.get(k) is not want]
+channel = s.get("preferredNotifChannel") or "auto"
+if (channel == "notifications_disabled") == want:
+    wrong.append("preferredNotifChannel=" + channel)
+state = "on" if want else "off"
+if wrong:
+    line("WARN", "notifications", "option %s but %s; fix: apply-setup.py --resilience" % (state, ", ".join(wrong)))
+else:
+    line("OK", "notifications", "option %s; pushes %s, preferredNotifChannel=%s" % (state, state, channel))
 
 orders = os.path.join(CLAUDE_DIR, "CLAUDE.md")
 try:
