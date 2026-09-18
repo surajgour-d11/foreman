@@ -13,6 +13,7 @@ mkdir -p "$HOME/.claude/agents" "$HOME/.claude/hooks"
 cat > "$HOME/.claude/settings.json" <<'JSON'
 {
   "model": "keep-me",
+  "preferredNotifChannel": "notifications_disabled",
   "enabledPlugins": {"superpowers@claude-plugins-official": true},
   "hooks": {
     "Notification": [{"hooks": [
@@ -35,6 +36,7 @@ echo '#!/bin/bash' > "$HOME/.claude/hooks/my-reminder.sh"
 report=$($py "$doctor")
 echo "$report" | grep -q "^FAIL agent-teams" || fail "doctor missed agent-teams env"
 echo "$report" | grep -q "^WARN resilience" || fail "doctor missed resilience settings"
+echo "$report" | grep -q "^WARN notifications" || fail "doctor missed disabled notifications"
 echo "$report" | grep -q "^WARN leftover-orders" || fail "doctor missed CLAUDE.md leftover"
 echo "$report" | grep -q "^WARN leftover-agents" || fail "doctor missed agents leftover"
 echo "$report" | grep -q "^WARN leftover-hooks: user-level Notification,SessionStart" || fail "doctor missed hooks leftover"
@@ -56,7 +58,8 @@ s = json.load(open(os.path.expanduser("~/.claude/settings.json")))
 assert os.stat(os.path.expanduser("~/.claude/settings.json")).st_mode & 0o777 == 0o600, "settings mode changed"
 assert s["model"] == "keep-me"
 assert s["env"]["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] == "1"
-assert s["autoContinueAtUsageLimit"] is True and s["inputNeededNotifEnabled"] is True
+assert s["autoContinueAtUsageLimit"] is True and s["inputNeededNotifEnabled"] is True and s["agentPushNotifEnabled"] is True
+assert s["preferredNotifChannel"] == "auto"
 assert [h["command"] for g in s["hooks"]["Notification"] for h in g["hooks"]] == ["/opt/mytools/pager.sh"], s["hooks"]
 assert [h["command"] for g in s["hooks"]["SessionStart"] for h in g["hooks"]] == ["/Users/x/.claude/hooks/my-reminder.sh"], s["hooks"]
 assert s["hooks"]["PostToolUse"][0]["hooks"][0]["command"] == "echo keep"
@@ -74,6 +77,7 @@ report=$($py "$doctor")
 echo "$report" | grep -q "leftover" && fail "leftovers still reported"
 echo "$report" | grep -q "^FAIL agent-teams" && fail "env still reported"
 echo "$report" | grep -q "^OK resilience" || fail "resilience not OK after apply"
+echo "$report" | grep -q "^OK notifications: option on; pushes on, preferredNotifChannel=auto" || fail "notifications not OK after apply"
 
 # Idempotent: a second run changes nothing and makes no second backup.
 $py "$apply" --all | grep -q "^set \|^move \|^remove " && fail "second run reported changes"
@@ -155,6 +159,18 @@ import json, os
 s = json.load(open(os.path.expanduser("~/.claude/settings.json")))
 assert s["env"]["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] == "1" and s["hooks"] == {"Notification": [None]}, s
 PY
+
+# notifications option off: both phone pushes go off and the channel is disabled.
+printf '{"inputNeededNotifEnabled": true, "agentPushNotifEnabled": true, "pluginConfigs": {"foreman@foreman": {"options": {"notifications": false}}}}\n' > "$HOME/.claude/settings.json"
+$py "$doctor" | grep -q "^WARN notifications: option off but inputNeededNotifEnabled=true, agentPushNotifEnabled=true, preferredNotifChannel=auto;" || fail "doctor did not flag notifications on with the option off"
+$py "$apply" --resilience | grep -q "^set preferredNotifChannel=notifications_disabled$" || fail "applier did not disable the channel with the option off"
+$py - <<'PY'
+import json, os
+s = json.load(open(os.path.expanduser("~/.claude/settings.json")))
+assert s["inputNeededNotifEnabled"] is False and s["agentPushNotifEnabled"] is False, s
+assert s["preferredNotifChannel"] == "notifications_disabled", s
+PY
+$py "$doctor" | grep -q "^OK notifications: option off; pushes off, preferredNotifChannel=notifications_disabled" || fail "notifications not OK with option off"
 
 # An unreadable settings.json is refused, never traced back or rewritten.
 chmod 000 "$HOME/.claude/settings.json"

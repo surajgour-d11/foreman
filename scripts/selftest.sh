@@ -1,116 +1,14 @@
 #!/bin/bash
-# Runnable check for the foreman hooks. Exit 0 means all three behave.
+# Runnable check for the foreman hooks. Exit 0 means both behave.
 s="$(cd "$(dirname "$0")" && pwd)"
 py=/usr/bin/python3
-
-out=$(echo '{"hook_event_name":"Notification","message":"Decision needed: new dependency","notification_type":"permission_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
-[ "$out" = "Decision needed: new dependency" ] || { echo "FAIL notify message: '$out'"; exit 1; }
-out=$(echo '{"hook_event_name":"Notification","message":"Claude is waiting for your input","notification_type":"idle_prompt"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
-[ -z "$out" ] || { echo "FAIL notify idle_prompt not dropped: '$out'"; exit 1; }
-out=$(echo 'not json' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
-[ "$out" = "Claude Code needs you" ] || { echo "FAIL notify fallback: '$out'"; exit 1; }
-out=$(echo '{"message":"-e display dialog \"pwn\""}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | tail -1)
-[ "$out" = '-e display dialog "pwn"' ] || { echo "FAIL notify dash-leading message: '$out'"; exit 1; }
-out=$(echo '{"message":"hi","cwd":"/Users/x/Public/foreman"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | head -1)
-[ "$out" = "Claude Code — foreman" ] || { echo "FAIL notify title: '$out'"; exit 1; }
-out=$(echo '{"message":"hi"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh" | head -1)
-[ "$out" = "Claude Code" ] || { echo "FAIL notify title fallback: '$out'"; exit 1; }
-out=$(echo '{"message":"hi","notification_type":"permission_prompt"}' | CLAUDE_PLUGIN_OPTION_NOTIFICATIONS=false FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
-[ -z "$out" ] || { echo "FAIL notify ran despite notifications=false: '$out'"; exit 1; }
-
-# Delivery: on iTerm2 the banner is an OSC 9 sequence written to the session's own terminal,
-# because a banner iTerm2 posted switches to that tab when it is clicked.
-ntty=$(mktemp)
-echo '{"message":"hi","cwd":"/Users/x/Public/foreman"}' | LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-$py - "$ntty" <<'PYX' || { echo "FAIL notify osc9 delivery"; exit 1; }
-import sys
-b = open(sys.argv[1], "rb").read()
-assert b == "\x1b]9;Claude Code — foreman: hi\x07".encode(), b
-PYX
-
-# The message is attacker-shaped text landing in an escape sequence: BEL closes OSC 9 and ESC
-# opens the next one, so neither may survive into the terminal. The text around them does.
-: > "$ntty"
-$py -c 'import json; print(json.dumps({"message": "hi\u0007\u001b]1337;File=name:x:", "cwd": "/p/foreman"}))' \
-  | LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-$py - "$ntty" <<'PYX' || { echo "FAIL notify osc9 control bytes"; exit 1; }
-import sys
-b = open(sys.argv[1], "rb").read()
-assert b == "\x1b]9;Claude Code — foreman: hi]1337;File=name:x:\x07".encode(), b
-PYX
-
-# A repo name is payload too: it reaches the same sequence through the title. A C1 control
-# (here U+009C, string terminator) is as good as BEL for closing the sequence.
-: > "$ntty"
-$py -c 'import json; print(json.dumps({"message": "hi", "cwd": "/p/ev\u0007i\u009cl"}))' \
-  | LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-$py - "$ntty" <<'PYX' || { echo "FAIL notify osc9 control bytes in cwd"; exit 1; }
-import sys
-b = open(sys.argv[1], "rb").read()
-assert b == "\x1b]9;Claude Code — evil: hi\x07".encode(), b
-PYX
-
-# Only control characters go. Text stays text on both paths, or a manager with accented repo
-# names cannot tell which window is asking.
-: > "$ntty"
-echo '{"message":"Décision requise","cwd":"/p/café"}' | LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-$py - "$ntty" <<'PYX' || { echo "FAIL notify osc9 keeps utf-8"; exit 1; }
-import sys
-b = open(sys.argv[1], "rb").read()
-assert b == "\x1b]9;Claude Code — café: Décision requise\x07".encode(), b
-PYX
-out=$(echo '{"message":"Décision requise","cwd":"/p/café"}' | FOREMAN_NOTIFY_DRY_RUN=1 "$s/notify.sh")
-[ "$out" = "$(printf 'Claude Code — café\nDécision requise')" ] || { echo "FAIL notify banner keeps utf-8: '$out'"; exit 1; }
-
-# Only iTerm2 attributes OSC 9 to a session. Anywhere else the sequence is printed or dropped,
-# so the plain banner is used and nothing is written to the tty: another terminal; tmux or
-# screen inside iTerm2, whose pty belongs to the multiplexer; a terminal that merely inherited
-# LC_TERMINAL from an iTerm2 shell.
-for env in \
-  "TERM_PROGRAM=Apple_Terminal LC_TERMINAL= TMUX= STY=" \
-  "TERM_PROGRAM=tmux LC_TERMINAL=iTerm2 TMUX=/tmp/tmux-501/default,1,0 STY=" \
-  "TERM_PROGRAM=iTerm.app LC_TERMINAL=iTerm2 TMUX= STY=12345.pts-0.host" \
-  "TERM_PROGRAM=vscode LC_TERMINAL=iTerm2 TMUX= STY=" \
-  "TERM_PROGRAM=ghostty LC_TERMINAL= TMUX=/tmp/tmux-501/default,1,0 STY="; do
-  : > "$ntty"
-  echo '{"message":"hi","cwd":"/p/foreman"}' | env $env FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-  [ ! -s "$ntty" ] || { echo "FAIL notify wrote osc9 under '$env': $(cat "$ntty")"; exit 1; }
-done
-
-# Over ssh from iTerm2 only LC_TERMINAL is forwarded; that is still iTerm2 at the far end.
-# Ghostty speaks the same OSC 9, names itself in TERM_PROGRAM, and forwards that over ssh.
-for env in "TERM_PROGRAM= LC_TERMINAL=iTerm2 TMUX= STY=" "TERM_PROGRAM=ghostty LC_TERMINAL= TMUX= STY="; do
-  : > "$ntty"
-  echo '{"message":"hi","cwd":"/p/foreman"}' | env $env FOREMAN_NOTIFY_TTY="$ntty" "$s/notify.sh"
-  [ -s "$ntty" ] || { echo "FAIL notify skipped osc9 under '$env'"; exit 1; }
-done
-rm -f "$ntty"
-
-# The terminal itself is the one on the claude process Claude Code names in CLAUDE_PID; the
-# hook has none. A stub ps answers for it with the script's own stdout, so the sequence that
-# would have gone to the terminal is captured here instead.
-nstub=$(mktemp -d)
-cat > "$nstub/ps" <<'STUB'
-#!/bin/bash
-[ "$*" = "-o tty= -p 4242" ] || { echo "ps called as: $*" >&2; exit 1; }
-echo fd/1
-STUB
-chmod +x "$nstub/ps"
-out=$(echo '{"message":"hi","cwd":"/p/foreman"}' | CLAUDE_PID=4242 PATH="$nstub:$PATH" LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_TTY= "$s/notify.sh")
-[ "$out" = "$(printf '\033]9;Claude Code — foreman: hi\007')" ] || { echo "FAIL notify tty from CLAUDE_PID: '$out'"; exit 1; }
-# No terminal on that process: the plain banner path, and nothing on stdout.
-printf '#!/bin/bash\necho "??"\n' > "$nstub/ps"
-out=$(echo '{"message":"hi","cwd":"/p/foreman"}' | CLAUDE_PID=4242 PATH="$nstub:$PATH" LC_TERMINAL= TERM_PROGRAM=iTerm.app TMUX= STY= FOREMAN_NOTIFY_DRY_RUN= FOREMAN_NOTIFY_TTY="$nstub/never" "$s/notify.sh")
-[ -z "$out" ] && [ ! -s "$nstub/never" ] || { echo "FAIL notify with no session tty: '$out'"; exit 1; }
-rm -rf "$nstub"
 
 $py - "$s/../hooks/hooks.json" <<'PY' || { echo "FAIL hooks.json shape"; exit 1; }
 import json, sys
 h = json.load(open(sys.argv[1]))["hooks"]
 assert h["SessionStart"][0]["matcher"] == "startup|clear|compact"
 assert h["SessionStart"][0]["hooks"][0]["command"] == '"${CLAUDE_PLUGIN_ROOT}"/scripts/session-start.sh'
-assert h["Notification"][0]["hooks"][0]["command"] == '"${CLAUDE_PLUGIN_ROOT}"/scripts/notify.sh'
-assert "matcher" not in h["Notification"][0]
+assert "Notification" not in h, "Claude Code posts its own notification; a hook would double it"
 assert h["PreCompact"][0]["hooks"][0]["command"] == '"${CLAUDE_PLUGIN_ROOT}"/scripts/pre-compact.sh'
 assert "matcher" not in h["PreCompact"][0]
 PY

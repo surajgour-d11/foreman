@@ -14,10 +14,10 @@ Ship the agent team as a Claude Code plugin named `foreman`, hosted in the publi
 |---|---|
 | Name | `foreman`. Skills appear as `/foreman:<skill>`, agents as `foreman:<role>`. |
 | Hosting | One repo, both marketplace and plugin. `.claude-plugin/marketplace.json` lists `./` as the single plugin. |
-| Platform | macOS only in this version. The macOS-specific parts (banner, caffeinate) exit silently elsewhere; the standing orders and ledger notice are platform-neutral and always emitted. |
+| Platform | macOS only in this version. The macOS-specific part (caffeinate) exits silently elsewhere; the standing orders and ledger notice are platform-neutral and always emitted. |
 | Standing orders | Fixed text, injected into every session by the SessionStart hook as `additionalContext`, the same mechanism superpowers uses. Plugins cannot ship a CLAUDE.md. |
-| Configuration | Three `userConfig` booleans, all default true. Two are read by the SessionStart hook: `keep_awake` runs caffeinate; `auto_pr` off makes the hook append one sentence to the orders telling the lead to ask before pushing or opening the pull request at Gate 2. The Notification hook reads `notifications`, and off exits before doing anything. No per-role overrides: plugin agents are namespaced `foreman:<role>`, so a copied agent file becomes a different agent and is never dispatched. Per-role overrides are deferred. |
-| Prerequisites | `superpowers` declared in `dependencies` in cross-marketplace form, since a bare name resolves only inside the foreman marketplace. macOS tools, `gh` auth, Agent Teams env, and the two resilience settings are checked by `/foreman:setup`, which offers to apply the settings a plugin cannot set itself. `ponytail` is optional: the implementer's prompt carries its smallest-change rule, and the doctor reports a missing ponytail as WARN with the install commands, so passing setup never requires trusting a new marketplace. |
+| Configuration | Three `userConfig` booleans, all default true. Two are read by the SessionStart hook: `keep_awake` runs caffeinate; `auto_pr` off makes the hook append one sentence to the orders telling the lead to ask before pushing or opening the pull request at Gate 2. `notifications` is read by the setup scripts from `pluginConfigs` in settings.json, since scripts run through the Bash tool never see `CLAUDE_PLUGIN_OPTION_*`: on, the applier turns on `inputNeededNotifEnabled` and `agentPushNotifEnabled` and resets a `notifications_disabled` `preferredNotifChannel` to `auto`; off, it turns both pushes off and sets the channel to `notifications_disabled`. The doctor reports the same. The plugin ships no Notification hook since 0.3.4, because a hook fires alongside the native notification and doubled it on iTerm2, Ghostty and Kitty. No per-role overrides: plugin agents are namespaced `foreman:<role>`, so a copied agent file becomes a different agent and is never dispatched. Per-role overrides are deferred. |
+| Prerequisites | `superpowers` declared in `dependencies` in cross-marketplace form, since a bare name resolves only inside the foreman marketplace. macOS tools, `gh` auth, Agent Teams env, the two resilience settings, and the notification channel are checked by `/foreman:setup`, which offers to apply the settings a plugin cannot set itself. `ponytail` is optional: the implementer's prompt carries its smallest-change rule, and the doctor reports a missing ponytail as WARN with the install commands, so passing setup never requires trusting a new marketplace. |
 | Trust boundary | A repo's ledger text is untrusted input. Both hooks that read it fence it as data, allow only printable ASCII and strip `"`, `<` and `>` — `session-start.sh` strips `;` as well, since it joins ledgers with `; ` — and cap what they print before it reaches the lead: `session-start.sh` fences at most five ledgers with phases cut to 120 characters, `pre-compact.sh` one ledger. The manager's unfenced startup message carries a count and no repo text at all, since prose needs no structural character to forge authority. |
 | Version | `version` in `plugin.json` only, starting at `0.1.0`. Bumped on every release; users update with `claude plugin update foreman@foreman`. |
 | Budget | Every plan carries a USD estimate per phase from `budget.md`; `scripts/usage.py` reports actual spend from the session transcripts into the ledger and `spend.md`. Report only, list price, no option. Design: `docs/superpowers/specs/2026-09-11-token-budget-design.md`. |
@@ -32,13 +32,12 @@ foreman/
 │   ├── plugin.json          name, version, dependencies, userConfig
 │   └── marketplace.json     single entry, source "./"
 ├── agents/                  architect.md, implementer.md, reviewer.md, qa.md
-├── hooks/hooks.json         SessionStart (startup|clear|compact), Notification, PreCompact
+├── hooks/hooks.json         SessionStart (startup|clear|compact), PreCompact
 ├── scripts/
 │   ├── session-start.sh     orders + ledger message + caffeinate, one JSON output
 │   ├── usage.py             spend report from the session transcripts
-│   ├── notify.sh            macOS banner
 │   ├── pre-compact.sh       compaction instructions that keep the run's state
-│   └── selftest.sh          runnable check for the three hooks
+│   └── selftest.sh          runnable check for the two hooks
 ├── orders.md                the standing orders, verbatim
 ├── budget.md                per-dispatch cost baseline and the estimating recipe
 ├── skills/setup/
@@ -62,15 +61,15 @@ foreman/
 - **Agents.** The plugin's agent files are the source of truth; the migrated originals are kept only in the migration backup. Against those originals: the reviewer and architect descriptions say "Does not edit code." instead of "Read-only." (their Bash is unrestricted), and their pair-protocol sentence names the findings file as the one file they may write; the implementer no longer preloads `ponytail:ponytail` and carries the smallest-change rule in its own prompt. Body references to role names become `foreman:architect`, `foreman:reviewer`, and so on where a role is named as a dispatch target.
 - **Standing orders** (`orders.md`). Same text as the current `~/.claude/CLAUDE.md` with six edits: roles and pairs are named `foreman:<role>` wherever they are dispatch targets, "live in `~/.claude/agents`" becomes "ship with the foreman plugin", and the hook line "the SessionStart hook prints it" stays true.
 - **session-start.sh.** Gains a third job: read `orders.md` from `${CLAUDE_PLUGIN_ROOT}` and include it in `additionalContext` ahead of any ledger notice. Honours `CLAUDE_PLUGIN_OPTION_KEEP_AWAKE`. Runs on `startup|clear|compact` so orders survive compaction, matching superpowers.
-- **notify.sh.** Exits at once when the `notifications` option is off. Drops `idle_prompt` events: Claude Code raises one about a minute into any wait for the manager, so passing them through banners every turn and drowns the permission prompts. The banner title is `Claude Code — <dir>`, the basename of the payload's `cwd`, so a manager running a session per repo can tell which window is asking. On iTerm2 and Ghostty the banner is an OSC 9 sequence written to the terminal of the process in `CLAUDE_PID`, so clicking it switches to that session; the terminal has to be allowed to post notifications, and the sound follows its settings rather than the script's. Anywhere else — another terminal, tmux or screen, no `CLAUDE_PID` — it is an `osascript` banner, and the script exits quietly when `osascript` is absent. Control characters are stripped from the message and the repo name before either path, since on the first one they would end the sequence early. `FOREMAN_NOTIFY_DRY_RUN` prints the title and message instead of delivering; `FOREMAN_NOTIFY_TTY` delivers to that path instead of a terminal.
+- **notify.sh.** Removed in 0.3.4. Claude Code posts its own notification for permission prompts, idle waits and `PushNotification` on iTerm2 (OSC 9), Ghostty (OSC 777) and Kitty (OSC 99), and rings the bell on Apple Terminal; a Notification hook fires alongside that, not instead of it, so the script was a second banner. `preferredNotifChannel` in settings picks the channel, and the doctor reports `notifications_disabled`.
 - **pre-compact.sh.** New. Runs on every compaction, manual or automatic, and prints instructions for the summary: keep the open run's ledger path and phase, the plan and spec paths, the branch and worktrees, pending escalations, the tier, and the last `Spend:` line; drop the intake conversation and quoted plan, spec, or review text. Silent when no team run is open.
-- **hooks.json.** All three hooks reference scripts via `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`.
+- **hooks.json.** Both hooks reference scripts via `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`.
 
 ## 5. `/foreman:setup`
 
 Idempotent. Run once after install, again any time to re-check.
 
-1. Runs `skills/setup/scripts/doctor.py`, which prints one line per check: Claude Code version, superpowers enabled, ponytail enabled, macOS with `osascript` and `caffeinate`, `gh auth status`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` in settings env, `autoContinueAtUsageLimit`, `inputNeededNotifEnabled`, and leftovers from a manual install: a `~/.claude/CLAUDE.md` starting "# Standing orders for the lead", user-level agents with the four role names, user-level Notification or SessionStart hooks pointing at `~/.claude/hooks/`.
+1. Runs `skills/setup/scripts/doctor.py`, which prints one line per check: Claude Code version, superpowers enabled, ponytail enabled, macOS with `caffeinate`, `gh auth status`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` in settings env, `autoContinueAtUsageLimit`, the push and channel settings against the `notifications` option, and leftovers from a manual install: a `~/.claude/CLAUDE.md` starting "# Standing orders for the lead", user-level agents with the four role names, user-level Notification or SessionStart hooks pointing at `~/.claude/hooks/`.
 2. Shows the report and asks the user which fixes to apply. Missing plugins get the exact install commands. Settings and leftovers are applied by `skills/setup/scripts/apply-setup.py`, which merges into `~/.claude/settings.json` preserving every other key, and moves leftovers to `~/.claude/backups/foreman-migration-<date>/` rather than deleting them.
 3. Re-runs the doctor and shows the result.
 
@@ -100,7 +99,7 @@ Release: bump `version` in `plugin.json`, add a CHANGELOG entry, merge to `main`
 3. Plugin installed on this machine from the local checkout, the manual files migrated, and the doctor reports all green. The GitHub path, including private-repo access, is exercised by the post-merge re-register.
 4. A fresh session in the throwaway repo: the lead can quote the first line of its standing orders, lists `foreman:architect`, `foreman:implementer`, `foreman:reviewer`, `foreman:qa`, and a dispatched `foreman:implementer` reports that its preloaded skills are present.
 5. The `keep_awake` option set to false stops caffeinate from starting.
-6. The `notifications` option set to false silences the banner and nothing else.
+6. The `notifications` option off makes `apply-setup.py --resilience` turn `inputNeededNotifEnabled` and `agentPushNotifEnabled` off and set `preferredNotifChannel` to `notifications_disabled`; on, it turns them on and resets `notifications_disabled` to `auto`.
 
 ## 8. Git flow for this repo
 
@@ -109,6 +108,6 @@ The first commit on `main` is the scaffold (README, LICENSE, CHANGELOG, this des
 ## 9. Deferred
 
 - Per-user or per-project role overrides.
-- Linux support (`notify-send`, `systemd-inhibit`).
+- Linux support (`systemd-inhibit`).
 - Templated standing orders driven by `userConfig`.
 - Submission to the official Anthropic marketplace when the repo goes public.

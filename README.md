@@ -80,11 +80,14 @@ names. The lead reads the summary, not a transcript.
   session says so in one line, then does whatever you asked. It picks the run
   back up when you type `resume` — reading the ledger and git, not its memory
   of the conversation.
-- **Desktop notifications.** A macOS banner when Claude Code needs a
-  permission decision or the lead needs you, titled with the repo it came from.
-  On iTerm2 and Ghostty, clicking it switches to the session that raised it;
-  the terminal has to be allowed to post notifications, which macOS asks
-  about the first time. Idle nags are suppressed.
+- **Desktop notifications, Claude Code's own.** Claude Code posts a
+  notification on iTerm2, Ghostty, and Kitty, and rings the bell on Apple
+  Terminal, when a permission decision waits or the lead needs you. Foreman
+  ships no notification hook of its own; `/foreman:setup` turns Claude Code's
+  phone pushes on and re-enables a disabled desktop channel, or turns both
+  off when the `notifications` option is off. On iTerm2, allow Notification
+  Center alerts and escape-sequence alerts in the profile's Terminal settings
+  first.
 - **No idle sleep.** Your Mac stays awake for the life of the session, so
   unattended work is not cut in half by the lid closing.
 
@@ -108,8 +111,8 @@ Then, in any Claude Code session:
 /foreman:setup
 ```
 
-It checks the requirements, offers to apply the three settings a plugin
-cannot set for itself, and moves any files from a manual install into a
+It checks the requirements, offers to apply the settings a plugin cannot
+set for itself, and moves any files from a manual install into a
 backup folder. Restart Claude Code afterwards.
 
 ## Configure
@@ -122,9 +125,12 @@ change it later from `/plugin`.
 Gate 2 without asking. Turn it off and the lead presents the branch and waits
 for your word.
 
-`notifications` (default on) controls the desktop banner. Turn it off and the
-Notification hook exits before doing anything; nothing else foreman does
-changes.
+`notifications` (default on) decides what `/foreman:setup` does with Claude
+Code's own notification settings. On, it turns on the phone pushes
+(`inputNeededNotifEnabled`, `agentPushNotifEnabled`) and sets the desktop
+channel, `preferredNotifChannel`, back to `auto` when it is
+`notifications_disabled`. Off, it turns the pushes off and sets the channel to
+`notifications_disabled`.
 
 Roles cannot be customised per user in this version; the lead dispatches the
 plugin's own `foreman:<role>` agents. Per-role overrides are on the list for a

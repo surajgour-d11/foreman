@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.4
+
+Notifications come from Claude Code itself. The plugin's Notification hook is
+gone. Claude Code already posts a desktop
+notification for permission prompts, idle waits, and `PushNotification` on
+iTerm2, Ghostty, and Kitty, and rings the bell on Apple Terminal, and a hook
+runs alongside that rather than replacing it, so foreman's banner was a second
+one for every permission prompt on the terminals that mattered.
+`/foreman:setup` now reports `preferredNotifChannel` and offers to set it back
+to `auto` when it is `notifications_disabled`; `/config` changes the channel.
+The `notifications` option now drives Claude Code's own settings instead: on,
+`/foreman:setup` turns on the phone pushes (`inputNeededNotifEnabled`,
+`agentPushNotifEnabled`) and re-enables a disabled desktop channel; off, it
+turns the pushes off and sets the channel to `notifications_disabled`.
+Gone with the hook: the repo name in the title, and the osascript banner on
+other terminals. On iTerm2, allow Notification Center alerts and
+escape-sequence alerts in the profile's Terminal settings. `osascript` is no
+longer a prerequisite.
+
 ## 0.3.3
 
 The repository lives in the `neels-ai-msp` organisation. The install command,
